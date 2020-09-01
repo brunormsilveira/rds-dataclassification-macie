@@ -1,0 +1,481 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Relational Database Data Classification Demo
+Metadata: {}
+Parameters:
+  Prefix:
+    Description: Environment Prefix
+    Type: String
+    Default: RDS2MacieDemo
+  VPCCIDR:
+    Description: VPC0
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnet0CIDR:
+    Description: Public Subnet 0
+    Type: String
+    Default: 10.0.0.0/24
+  PublicSubnet0AZ:
+    Description: Public Subnet 0 - AZ
+    Type: String
+    Default: us-east-1a
+  PublicSubnet1CIDR:
+    Description: Public Subnet 0
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnet1AZ:
+    Description: Public Subnet 1 - AZ
+    Type: String
+    Default: us-east-1b
+  PrivateSubnet0CIDR:
+    Description: Private Subnet 0
+    Type: String
+    Default: 10.0.2.0/24
+  PrivateSubnet0AZ:
+    Description: Private Subnet 0 - AZ
+    Type: String
+    Default: us-east-1a
+  PrivateSubnet1CIDR:
+    Description: Private Subnet 1
+    Type: String
+    Default: 10.0.3.0/24
+  PrivateSubnet1AZ:
+    Description: Private Subnet 1 - AZ
+    Type: String
+    Default: us-east-1b
+  DBInstanceID:
+    Default: mydbinstance
+    Description: My database instance
+    Type: String
+    MinLength: '1'
+    MaxLength: '63'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: >-
+      Must begin with a letter and must not end with a hyphen or contain two
+      consecutive hyphens.
+  DBInstanceClass:
+    Default: db.m5.large
+    Description: DB instance class
+    Type: String
+    ConstraintDescription: Must select a valid DB instance type.
+  DBAllocatedStorage:
+    Default: '20'
+    Description: The size of the database (GiB)
+    Type: Number
+    MinValue: '5'
+    MaxValue: '1024'
+    ConstraintDescription: must be between 20 and 65536 GiB.
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password MySQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-vpc'
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-igw'
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  PublicSubnet0:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref PublicSubnet0AZ
+      CidrBlock: !Ref PublicSubnet0CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-public_subnet0'
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref PublicSubnet1AZ
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-public_subnet1'
+  PrivateSubnet0:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref PrivateSubnet0AZ
+      CidrBlock: !Ref PrivateSubnet0CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-private_subnet0'
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref PrivateSubnet1AZ
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-private_subnet1'
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-public_rt'
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-private_rt'
+  PublicDefaultRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnet0RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet0
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+  PrivateSubnet0RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+  MySQLDB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: !Ref DBInstanceID
+      DBName: classicmodels
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      Engine: MySQL
+      EngineVersion: 8.0.16
+      MasterUsername: admin
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSG
+  DBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: DBSubnetGroup for RDS Instance
+      SubnetIds:
+        - !Ref PrivateSubnet0
+        - !Ref PrivateSubnet1
+  DMSSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - PrivateSubnet0
+      - PrivateSubnet1
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: DMS security group
+  RDSSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    DependsOn:
+      - PrivateSubnet0
+      - PrivateSubnet1
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: RDS security group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Ref PublicSubnet0CIDR
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Ref PublicSubnet1CIDR
+  DMSReplicationInstance: 
+    DependsOn: DMSReplicationSubnetGroup
+    Type: "AWS::DMS::ReplicationInstance"
+    Properties: 
+      ReplicationInstanceClass: dms.t2.small
+      AvailabilityZone: !GetAtt PublicSubnet0.AvailabilityZone
+      ReplicationSubnetGroupIdentifier: !Ref DMSReplicationSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref DMSSG
+  DMSReplicationSubnetGroup:
+    DependsOn: 
+      - PublicSubnet0
+      - PublicSubnet1
+    Type: "AWS::DMS::ReplicationSubnetGroup"
+    Properties: 
+      ReplicationSubnetGroupDescription: DMS Subnet Group
+      ReplicationSubnetGroupIdentifier: dmssubnetgroup-demo
+      SubnetIds: 
+        - !Ref PublicSubnet0
+        - !Ref PublicSubnet1
+  DBEndpoint:
+    Type: "AWS::DMS::Endpoint"
+    Properties: 
+      DatabaseName: classicmodels
+      EndpointType: source
+      EngineName: mysql
+      Password: !Ref DBPassword
+      Port: !GetAtt MySQLDB.Endpoint.Port
+      ServerName: !GetAtt MySQLDB.Endpoint.Address
+      Username: admin
+  S3Endpoint:
+    Type: AWS::DMS::Endpoint
+    Properties: 
+        EndpointType: target
+        EngineName: s3
+        ExtraConnectionAttributes: "addColumnName:true"
+        S3Settings: 
+            BucketName: !Ref DemoBucket
+            ServiceAccessRoleArn: !GetAtt DMStoS3Role.Arn
+  DMStoS3Role: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "dms.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: DMStoS3Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: Allow
+                Action: 
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource: 
+                  - !GetAtt DemoBucket.Arn
+                  - !Sub "${DemoBucket.Arn}/*"
+  DBToS3Task:
+    Type: 'AWS::DMS::ReplicationTask'
+    Properties:
+      MigrationType: full-load-and-cdc
+      ReplicationInstanceArn: !Ref DMSReplicationInstance
+      SourceEndpointArn: !Ref DBEndpoint
+      TargetEndpointArn: !Ref S3Endpoint
+      ReplicationTaskSettings: '{
+        "TargetMetadata": {
+          "SupportLobs": true,
+        },
+        "FullLoadSettings": {
+          "TargetTablePrepMode": "DROP_AND_CREATE"
+        },
+        "Logging": {
+          "EnableLogging": true
+        },
+      }'
+      TableMappings: '{
+        "rules": [
+          {
+            "rule-type": "selection",
+            "rule-id": "1",
+            "rule-name": "1",
+            "object-locator": {
+              "schema-name": "classicmodels",
+              "table-name": "%"
+            },
+            "rule-action": "include",
+            "filters": []
+          }
+          ]
+      }'
+  DemoBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  ResultsBucket:
+    DependsOn: ResultsKey
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !GetAtt ResultsKey.Arn
+  ConfidentialKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName:
+        'Fn::Join':
+          - ''
+          - - alias/
+            - Ref: 'AWS::StackName'
+            - '-confidential-bucket-encryption-key'
+      TargetKeyId:
+        Ref: ConfidentialKey
+  ResultsKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: Key for results bucket
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS:
+                'Fn::Join':
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - Ref: 'AWS::AccountId'
+                    - ':root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Macie Principal to use the key
+            Effect: Allow
+            Principal:
+              Service: macie.amazonaws.com
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:GenerateDataKey'
+            Resource: '*'
+  ResultsKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName:
+        'Fn::Join':
+          - ''
+          - - alias/
+            - Ref: 'AWS::StackName'
+            - '-results-bucket-encryption-key'
+      TargetKeyId:
+        Ref: ResultsKey
+  ConfidentialKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: Key for confidential bucket
+      Tags:
+        - Key: Classification
+          Value: Confidential
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-2
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS:
+                'Fn::Join':
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - Ref: 'AWS::AccountId'
+                    - ':root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Macie Service Role to use the key
+            Effect: Allow
+            Principal:
+              AWS:
+                'Fn::Join':
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - Ref: 'AWS::AccountId'
+                    - >-
+                      :role/aws-service-role/macie.amazonaws.com/AWSServiceRoleForAmazonMacie
+            Action:
+              - 'kms:DescribeKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey'
+            Resource: '*'
+  ResultsBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref ResultsBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetBucketLocation'
+            Effect: Allow
+            Principal:
+              Service: macie.amazonaws.com
+            Resource: !GetAtt ResultsBucket.Arn
+          - Action:
+              - 's3:PutObject'
+            Effect: Allow
+            Principal:
+              Service: macie.amazonaws.com
+            Resource:
+              'Fn::Join':
+                - ''
+                - - !GetAtt ResultsBucket.Arn
+                  - /*
+          - Action:
+              - 's3:*'
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              'Fn::Join':
+                - ''
+                - - !GetAtt ResultsBucket.Arn
+                  - /*
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+  Cloud9:
+    Type: 'AWS::Cloud9::EnvironmentEC2'
+    Properties:
+      InstanceType: t2.micro
+      Name: !Sub '${Prefix}-environment'
+      Description: !Sub '${Prefix}-environment'
+      SubnetId: !Ref PublicSubnet0
+      AutomaticStopTimeMinutes: 30
+Outputs:
+  EndpointAddress:
+    Description: Address of the RDS endpoint.
+    Value: !GetAtt MySQLDB.Endpoint.Address
+    Export:
+      Name: !Join 
+        - ':'
+        - - !Ref 'AWS::StackName'
+          - EndpointAddress
+  EndpointPort:
+    Description: Port of the RDS endpoint.
+    Value: !GetAtt MySQLDB.Endpoint.Port
+    Export:
+      Name: !Join 
+        - ':'
+        - - !Ref 'AWS::StackName'
+          - EndpointPort
