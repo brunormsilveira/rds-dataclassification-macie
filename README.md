@@ -8,6 +8,15 @@ and also will use Amazon Athena and Amazon QuickSight to simplify the audit asse
 
 ![solution](images/rds2macie.png)
 
+As you see, the architecture from the solution that we will show you how to build is described as:
+
+1.	Classic Models demo relational database on RDS for MySQL.
+2.	DMS task that connect to Classic Models Demo database and transform the data into a several CSV files and load into S3 bucket.
+3.	Once the DMS task has being succeed, the Amazon Macie classification job will start to discover and classified the data and put the results into other S3 bucket. 
+4.	Once the classification job results are delivered, Amazon Athena will use Hive to create a table from the job classification results bucket.
+5.	Amazon Quicksight will be used to create a data source and start to create audit dashboards.
+
+
 To get started you will need an IAM user with the following access:
 
 - Amazon Macie
