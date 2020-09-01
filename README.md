@@ -3,6 +3,8 @@
 ### Overview
 
 Amazon Macie is a fully managed data security and data privacy service that uses machine learning and pattern matching to discover and protect your sensitive data in AWS.
+Today it's only possible to run Amazon Macie Jobs against S3 buckets, so this solution will shows how to discover and classify relational database data from RDS using AWS Database Migration
+and also will use Amazon Athena and Amazon QuickSight to simplify the audit assessments on Amazon Macie Jobs results.
 
 ![solution](images/rds2macie.png)
 
