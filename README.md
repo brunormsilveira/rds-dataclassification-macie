@@ -120,31 +120,23 @@ _Note If is all ok, let's go to Amazon Macie to create our **data classification
 Now we are going to create a Data Classification job so we can evaluate the contents of our S3 bucket. The job that we will create will run once and it will evaluate the complete contents of our S3 buckets to see if we have [PII (Perfonal Identifiable Information)](https://docs.aws.amazon.com/macie/latest/userguide/macie-classify-objects-pii.html).  This job will use only the managed identifiers available with Amazon Macie, the complete list of managed identifiers is available [here](https://docs.aws.amazon.com/macie/latest/user/managed-data-identifiers.html).
 
 1. Go to the [Macie console](https://console.aws.amazon.com/macie/home?region=us-east-1).
-2. To begin, select the **S3 buckets** option in the left hand menu.
-3. Select the three S3 buckets labeled.  You may need to wait a minute and then click ***Refresh icon*** if all the buckets names do not display.
-- macieworkshop-env-setup-publicbucket-\<random\>
-- macieworkshop-env-setup-internalbucket-\<random\>
-- macieworkshop-env-setup-confidentialbucket-\<random\>
-
+2. To begin, select the **S3 bucket** option in the left hand menu.
+3. Select the S3 bucket with the output data from the DMS task.  You may need to wait a minute and then click ***Refresh icon*** if the bucket name do not display.
 4. Click on the **Create job** button. 
-> You are now able to verify the S3 buckets you chose before you continue, use the **Previous** or **Remove** buttons if you selected the incorrect S3 buckets.  
+> You are now able to verify the S3 bucket you chose before you continue, use the **Previous** or **Remove** buttons if you selected the incorrect S3 bucket.  
 5. Click on **Next** to continue.
 6. You will now scope your job. Create your job with the following parameters or scope.
-- Schedule: Daily  
+- Schedule: One-time job  
 - Sampling Depth: 100%  
 - Leave all other settings as default 
 7. Click on **Next** to continue.
 > We will not be including any custom data identifiers in this job.
 8. Click on **Next** to continue.
 9. Give the job a name and description.  
-
-Name|Description
-------|-----
-**Macie Workshop Scan all buckets**|**Scan all our S3 buckets to discover data using only AWS managed data identifiers**    
-
 10. Click on **Next** to continue.
 11. Verify all the details of the job you have created and click on **Submit** to continue.
-12. You will see a green banner telling you the ***Job was created successfully***.
+12. You will see a green banner telling you the ***The Job was successfully created***.
+
 
 ## Amazon Athena
 
