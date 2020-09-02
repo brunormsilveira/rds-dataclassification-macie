@@ -56,7 +56,7 @@ Macie is now enabled and has begun to collect information about the S3 buckets i
 8. Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value
   
 
-## Setup Cloud9 environment
+## Using Cloud9 environment
 1. Open the Cloud9 console at https://console.aws.amazon.com/cloud9
 2. On the Step 1 - Name environment: Enter the Environment name as **'webfiltering'**
 3. On the Step 2 - Configure settings: Just click on **Next** button
@@ -69,6 +69,35 @@ git commit -m "Repo Init"
 git remote add origin https://git-codecommit.us-east-1.amazonaws.com/v1/repos/cicd-techtalk
 git push -u origin master
 ```
+
+```
+CREATE EXTERNAL TABLE `macie_results2`(
+  `schemaversion` string COMMENT 'from deserializer', 
+  `id` string COMMENT 'from deserializer', 
+  `accountid` string COMMENT 'from deserializer', 
+  `partition` string COMMENT 'from deserializer', 
+  `region` string COMMENT 'from deserializer', 
+  `type` string COMMENT 'from deserializer', 
+  `title` string COMMENT 'from deserializer', 
+  `description` string COMMENT 'from deserializer', 
+  `severity` struct<score:string,description:string> COMMENT 'from deserializer', 
+  `createdat` string COMMENT 'from deserializer', 
+  `resourcesaffected` struct<s3bucket:struct<arn:string,name:string,createdat:string,owner:struct<displayname:string,id:string>>> COMMENT 'from deserializer', 
+  `encryptiontype` string COMMENT 'from deserializer', 
+  `publicaccess` struct<permissionconfiguration:struct<bucketlevelpermissions:struct<accesscontrollist:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,bucketpolicy:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>,accountlevelpermissions:struct<blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>>,effectivepermission:string> COMMENT 'from deserializer', 
+  `s3object` struct<bucketarn:string,key:string,path:string,extension:string,lastmodified:string,etag:string,serversideencryption:struct<encryptiontype:string>,size:string,storageclass:string,publicaccess:string> COMMENT 'from deserializer', 
+  `category` string COMMENT 'from deserializer')
+ROW FORMAT SERDE 
+  'org.openx.data.jsonserde.JsonSerDe' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.mapred.TextInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
+
+```
+
 
 
 ## Create the first Data Classification Job
