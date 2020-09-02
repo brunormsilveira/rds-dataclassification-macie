@@ -253,10 +253,11 @@ Resources:
         ExtraConnectionAttributes: "addColumnName:true"
         S3Settings: 
             BucketName: !Ref DemoBucket
-            ServiceAccessRoleArn: !GetAtt DMStoS3Role.Arn
-  DMStoS3Role: 
+            ServiceAccessRoleArn: !GetAtt DMSAccessRole.Arn
+  DMSAccessRole: 
     Type: "AWS::IAM::Role"
-    Properties: 
+    Properties:
+      RoleName: 'dms-vpc-role'
       AssumeRolePolicyDocument: 
         Version: "2012-10-17"
         Statement: 
@@ -268,6 +269,8 @@ Resources:
             Action: 
               - "sts:AssumeRole"
       Path: "/"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole'
       Policies:
         -
           PolicyName: DMStoS3Policy

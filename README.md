@@ -50,7 +50,7 @@ Macie is now enabled and has begun to collect information about the S3 buckets i
 2. Open the [CloudFormation](https://console.aws.amazon.com/cloudformation/home?region=us-east-1) console (us-east-1).
 3. On the Welcome page, click on **Create stack** button.
 4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml**.
-5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo**.
+5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo** and define your MySQL admin password on **DBPassword**.
 6. On the Step 3 - Configure stack options: Just click on **Next** button.
 7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button.
 8. Wait for the stack get into status **CREATE_COMPLETE**.
@@ -59,23 +59,23 @@ _Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointP
   
 
 ## Using Cloud9 environment
-1. In Cloudformation Stack, go to **Resources** tab
-2. Click in the **Physical ID** button that apears in the Logical ID that contains **Cloud9**. 
+1. Open the [Cloud9](https://console.aws.amazon.com/cloud9/home?region=us-east-1) console (us-east-1).
+2. In **Your environments**, click in the **Open IDE** button on the envionment that CloudFormation created (eg. RDS2MacieDemo-environment.
 2. Once your envionment was open, select the **bash** tab and execute the following commands:
 ```
-git init
-git add .
-git commit -m "Repo Init"
-git remote add origin https://github.com/brunormsilveira/rds-dataclassification-macie.git
-git push -u origin master
+git clone https://github.com/brunormsilveira/rds-dataclassification-macie.git
+
 ```
 ## Deploying ClassicModels Database 
 
-1. In the command line, run
-2. Click in the **Physical ID** button that apears in the Logical ID that contains **Cloud9**. 
-2. Once your envionment was open, select the **bash** tab and execute the following commands:
+1. Onde with the code in your envionment, execute the following commands;
+```
+cd rds-dataclassification-macie/
+mysql -u admin -h [ENDPOINT-FROM-RDS-INSTANCE] classicmodels -p < deploy/classicmodels.sql
 
 ```
+_Note: this commands will load the data from classicmodels database into RDS instance_
+
 CREATE EXTERNAL TABLE `macie_results2`(
   `schemaversion` string COMMENT 'from deserializer', 
   `id` string COMMENT 'from deserializer', 
