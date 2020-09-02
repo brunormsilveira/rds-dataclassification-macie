@@ -46,29 +46,34 @@ Your first step is to enable Amazon Macie.  Later we will create data classifica
 Macie is now enabled and has begun to collect information about the S3 buckets in the account.
 
 ## CloudFormation
-1. Open the CloudFormation console at https://console.aws.amazon.com/cloudformation
-2. On the Welcome page, click on **Create stack** button
-3. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml** located inside **deploy** directory
-4. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo**
-5. On the Step 3 - Configure stack options: Just click on **Next** button
-6. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button
-7. Wait for the stack get into status **CREATE_COMPLETE**
-8. Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value
+1. Download the deploy/template.yaml file in your computer
+2. Open the CloudFormation console at https://console.aws.amazon.com/cloudformation
+3. On the Welcome page, click on **Create stack** button
+4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml** 
+5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo**
+6. On the Step 3 - Configure stack options: Just click on **Next** button
+7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button
+8. Wait for the stack get into status **CREATE_COMPLETE**
+
+_Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value_
   
 
 ## Using Cloud9 environment
-1. Open the Cloud9 console at https://console.aws.amazon.com/cloud9
-2. On the Step 1 - Name environment: Enter the Environment name as **'webfiltering'**
-3. On the Step 2 - Configure settings: Just click on **Next** button
-4. On the Step 3 - Review: Check the resources being created, and click on **Create Environment** button 
-5. Once your envionment was provisioned, select the **bash** tab and execute the following commands:
+1. In Cloudformation Stack, go to **Resources** tab
+2. Click in the **Physical ID** button that apears in the Logical ID that contains **Cloud9**. 
+2. Once your envionment was open, select the **bash** tab and execute the following commands:
 ```
 git init
 git add .
 git commit -m "Repo Init"
-git remote add origin https://git-codecommit.us-east-1.amazonaws.com/v1/repos/cicd-techtalk
+git remote add origin https://github.com/brunormsilveira/rds-dataclassification-macie.git
 git push -u origin master
 ```
+## Deploying ClassicModels Database 
+
+1. In the command line, run
+2. Click in the **Physical ID** button that apears in the Logical ID that contains **Cloud9**. 
+2. Once your envionment was open, select the **bash** tab and execute the following commands:
 
 ```
 CREATE EXTERNAL TABLE `macie_results2`(
