@@ -163,7 +163,7 @@ Now we are going to create a Data Classification job so we can evaluate the cont
 ## Amazon Athena
 
 ```
-CREATE EXTERNAL TABLE `macie_results2`(
+CREATE EXTERNAL TABLE `macie_results`(
   `schemaversion` string COMMENT 'from deserializer', 
   `id` string COMMENT 'from deserializer', 
   `accountid` string COMMENT 'from deserializer', 
@@ -171,23 +171,19 @@ CREATE EXTERNAL TABLE `macie_results2`(
   `region` string COMMENT 'from deserializer', 
   `type` string COMMENT 'from deserializer', 
   `title` string COMMENT 'from deserializer', 
-  `description` string COMMENT 'from deserializer', 
-  `severity` struct<score:string,description:string> COMMENT 'from deserializer', 
+  `severity` array<string> COMMENT 'from deserializer', 
   `createdat` string COMMENT 'from deserializer', 
-  `resourcesaffected` struct<s3bucket:struct<arn:string,name:string,createdat:string,owner:struct<displayname:string,id:string>>> COMMENT 'from deserializer', 
-  `encryptiontype` string COMMENT 'from deserializer', 
-  `publicaccess` struct<permissionconfiguration:struct<bucketlevelpermissions:struct<accesscontrollist:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,bucketpolicy:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>,accountlevelpermissions:struct<blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>>,effectivepermission:string> COMMENT 'from deserializer', 
-  `s3object` struct<bucketarn:string,key:string,path:string,extension:string,lastmodified:string,etag:string,serversideencryption:struct<encryptiontype:string>,size:string,storageclass:string,publicaccess:string> COMMENT 'from deserializer', 
-  `category` string COMMENT 'from deserializer')
+  `resourcesaffected` array<string> COMMENT 'from deserializer', 
+  `category` string COMMENT 'from deserializer', 
+  `classificationdetails` array<string> COMMENT 'from deserializer')
 ROW FORMAT SERDE 
   'org.openx.data.jsonserde.JsonSerDe' 
 STORED AS INPUTFORMAT 
   'org.apache.hadoop.mapred.TextInputFormat' 
 OUTPUTFORMAT 
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'
 LOCATION
   's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
-
 ```
 
 

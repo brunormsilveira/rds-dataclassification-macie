@@ -319,6 +319,13 @@ Resources:
           }
           ]
       }'
+  MacieDatabase:
+    Type: AWS::Glue::Database
+    Properties: 
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: 'Macie Results Database'
+        Name: maciedb
   DemoBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
