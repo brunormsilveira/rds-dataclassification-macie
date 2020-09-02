@@ -84,46 +84,40 @@ mysql -u admin -h [ENDPOINT-FROM-RDS-INSTANCE] classicmodels -p < deploy/classic
 ```
 _Note: when ask you the password from MySQL, use the password that you defined on **DBPassword** paramenter in the CloudFormation template._
 
-## Runing DMS Task
+## Running DMS Task
 
 1. Open the [DMS](https://console.aws.amazon.com/dms/v2/home?region=us-east-1#dashboard) console (us-east-1).
 2. In the DMS Dashboard, click on **Database migration tasks**.
 3. You will see a task with name initiating with **rdstos3task-**. Select it.
 4. Click on **Actions** and choose **Restart/Resume**.
 
-```
-CREATE EXTERNAL TABLE `macie_results2`(
-  `schemaversion` string COMMENT 'from deserializer', 
-  `id` string COMMENT 'from deserializer', 
-  `accountid` string COMMENT 'from deserializer', 
-  `partition` string COMMENT 'from deserializer', 
-  `region` string COMMENT 'from deserializer', 
-  `type` string COMMENT 'from deserializer', 
-  `title` string COMMENT 'from deserializer', 
-  `description` string COMMENT 'from deserializer', 
-  `severity` struct<score:string,description:string> COMMENT 'from deserializer', 
-  `createdat` string COMMENT 'from deserializer', 
-  `resourcesaffected` struct<s3bucket:struct<arn:string,name:string,createdat:string,owner:struct<displayname:string,id:string>>> COMMENT 'from deserializer', 
-  `encryptiontype` string COMMENT 'from deserializer', 
-  `publicaccess` struct<permissionconfiguration:struct<bucketlevelpermissions:struct<accesscontrollist:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,bucketpolicy:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>,accountlevelpermissions:struct<blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>>,effectivepermission:string> COMMENT 'from deserializer', 
-  `s3object` struct<bucketarn:string,key:string,path:string,extension:string,lastmodified:string,etag:string,serversideencryption:struct<encryptiontype:string>,size:string,storageclass:string,publicaccess:string> COMMENT 'from deserializer', 
-  `category` string COMMENT 'from deserializer')
-ROW FORMAT SERDE 
-  'org.openx.data.jsonserde.JsonSerDe' 
-STORED AS INPUTFORMAT 
-  'org.apache.hadoop.mapred.TextInputFormat' 
-OUTPUTFORMAT 
-  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-LOCATION
-  's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
+_Note: when the task status turn to **Load complete**, it's time to check your output S3 bucket._ 
+
+
+## Checking S3 output bucket
+
+1. Open the [S3](https://console.aws.amazon.com/s3/home?region=us-east-1#).
+2. Click in the bucket that contains **-demobucket-** in the name (eg. rds2maciedemo-demobucket-{random number}).
+3. Check if the bucket has this folder hierarchy:
 
 ```
+classicmodels:
+  customers
+  employees
+  offices
+  orderdetails
+  orders
+  payments
+  productlines
+  products
+
+```
+_Note If is all ok, let's go to Amazon Macie to create our **data classification job**._
 
 
+## Create the Data Classification Job
 
-## Create the first Data Classification Job
-
-Now we are going to create a Data Classification job so we can evaluate the contents of our S3 buckets.  The first job we create will run once a day and evaluate the complete contents of our S3 buckets to make sure we have correctly tagged and classified all our data.  This job will use only the managed identifiers available with Amazon Macie, the complete list of managed identifiers is available [here](https://docs.aws.amazon.com/macie/latest/user/managed-data-identifiers.html).
+Now we are going to create a Data Classification job so we can evaluate the contents of our S3 bucket. The job that we will create will run once and it will evaluate the complete contents of our S3 buckets to see if we have [PII (Perfonal Identifiable Information)](https://docs.aws.amazon.com/macie/latest/userguide/macie-classify-objects-pii.html).  This job will use only the managed identifiers available with Amazon Macie, the complete list of managed identifiers is available [here](https://docs.aws.amazon.com/macie/latest/user/managed-data-identifiers.html).
 
 1. Go to the [Macie console](https://console.aws.amazon.com/macie/home?region=us-east-1).
 2. To begin, select the **S3 buckets** option in the left hand menu.
@@ -152,6 +146,35 @@ Name|Description
 11. Verify all the details of the job you have created and click on **Submit** to continue.
 12. You will see a green banner telling you the ***Job was created successfully***.
 
+## Amazon Athena
+
+```
+CREATE EXTERNAL TABLE `macie_results2`(
+  `schemaversion` string COMMENT 'from deserializer', 
+  `id` string COMMENT 'from deserializer', 
+  `accountid` string COMMENT 'from deserializer', 
+  `partition` string COMMENT 'from deserializer', 
+  `region` string COMMENT 'from deserializer', 
+  `type` string COMMENT 'from deserializer', 
+  `title` string COMMENT 'from deserializer', 
+  `description` string COMMENT 'from deserializer', 
+  `severity` struct<score:string,description:string> COMMENT 'from deserializer', 
+  `createdat` string COMMENT 'from deserializer', 
+  `resourcesaffected` struct<s3bucket:struct<arn:string,name:string,createdat:string,owner:struct<displayname:string,id:string>>> COMMENT 'from deserializer', 
+  `encryptiontype` string COMMENT 'from deserializer', 
+  `publicaccess` struct<permissionconfiguration:struct<bucketlevelpermissions:struct<accesscontrollist:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,bucketpolicy:struct<allowspublicreadaccess:string,allowspublicwriteaccess:string>,blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>,accountlevelpermissions:struct<blockpublicaccess:struct<ignorepublicacls:string,restrictpublicbuckets:string,blockpublicacls:string,blockpublicpolicy:string>>>,effectivepermission:string> COMMENT 'from deserializer', 
+  `s3object` struct<bucketarn:string,key:string,path:string,extension:string,lastmodified:string,etag:string,serversideencryption:struct<encryptiontype:string>,size:string,storageclass:string,publicaccess:string> COMMENT 'from deserializer', 
+  `category` string COMMENT 'from deserializer')
+ROW FORMAT SERDE 
+  'org.openx.data.jsonserde.JsonSerDe' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.mapred.TextInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
+
+```
 
 
 ## Clean up
