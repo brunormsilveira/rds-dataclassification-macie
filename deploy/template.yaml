@@ -286,10 +286,10 @@ Resources:
                 Resource: 
                   - !GetAtt DemoBucket.Arn
                   - !Sub "${DemoBucket.Arn}/*"
-  DBToS3Task:
+  RDSToS3Task:
     Type: 'AWS::DMS::ReplicationTask'
     Properties:
-      MigrationType: full-load-and-cdc
+      MigrationType: full-load
       ReplicationInstanceArn: !Ref DMSReplicationInstance
       SourceEndpointArn: !Ref DBEndpoint
       TargetEndpointArn: !Ref S3Endpoint

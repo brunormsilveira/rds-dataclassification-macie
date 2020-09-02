@@ -84,6 +84,13 @@ mysql -u admin -h [ENDPOINT-FROM-RDS-INSTANCE] classicmodels -p < deploy/classic
 ```
 _Note: when ask you the password from MySQL, use the password that you defined on **DBPassword** paramenter in the CloudFormation template._
 
+## Runing DMS Task
+
+1. Open the [DMS](https://console.aws.amazon.com/dms/v2/home?region=us-east-1#dashboard) console (us-east-1).
+2. In the DMS Dashboard, click on **Database migration tasks**.
+3. You will see a task with name initiating with **rdstos3task-**. Select it.
+4. Click on **Actions** and choose **Restart/Resume**.
+
 ```
 CREATE EXTERNAL TABLE `macie_results2`(
   `schemaversion` string COMMENT 'from deserializer', 
