@@ -82,6 +82,7 @@ cd rds-dataclassification-macie/
 mysql -u admin -h [ENDPOINT-FROM-RDS-INSTANCE] classicmodels -p < deploy/classicmodels.sql
 
 ```
+_Note: when ask you the password from MySQL, use the password that you defined on **DBPassword** paramenter in the CloudFormation template._
 
 ```
 CREATE EXTERNAL TABLE `macie_results2`(
