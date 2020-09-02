@@ -62,20 +62,28 @@ _Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointP
 1. Open the [Cloud9](https://console.aws.amazon.com/cloud9/home?region=us-east-1) console (us-east-1).
 2. In **Your environments**, click in the **Open IDE** button on the envionment that CloudFormation created (eg. RDS2MacieDemo-environment.
 2. Once your envionment was open, select the **bash** tab and execute the following commands:
+
 ```
 git clone https://github.com/brunormsilveira/rds-dataclassification-macie.git
 
 ```
+
 ## Deploying ClassicModels Database 
 
-1. Onde with the code in your envionment, execute the following commands;
+1. Once with the code in your envionment, enter into repository folder.
+
 ```
 cd rds-dataclassification-macie/
+```
+
+2. Now let's load the data from classicmodels database into RDS instance.
+
+```
 mysql -u admin -h [ENDPOINT-FROM-RDS-INSTANCE] classicmodels -p < deploy/classicmodels.sql
 
 ```
-_Note: this commands will load the data from classicmodels database into RDS instance_
 
+```
 CREATE EXTERNAL TABLE `macie_results2`(
   `schemaversion` string COMMENT 'from deserializer', 
   `id` string COMMENT 'from deserializer', 
