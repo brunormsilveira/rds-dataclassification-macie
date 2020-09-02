@@ -47,13 +47,13 @@ Macie is now enabled and has begun to collect information about the S3 buckets i
 
 ## CloudFormation
 1. Download the deploy/template.yaml file in your computer
-2. Open the CloudFormation console at https://console.aws.amazon.com/cloudformation
-3. On the Welcome page, click on **Create stack** button
-4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml** 
-5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo**
-6. On the Step 3 - Configure stack options: Just click on **Next** button
-7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button
-8. Wait for the stack get into status **CREATE_COMPLETE**
+2. Open the [CloudFormation](https://console.aws.amazon.com/cloudformation/home?region=us-east-1) console (us-east-1).
+3. On the Welcome page, click on **Create stack** button.
+4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml**.
+5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo**.
+6. On the Step 3 - Configure stack options: Just click on **Next** button.
+7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button.
+8. Wait for the stack get into status **CREATE_COMPLETE**.
 
 _Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value_
   
