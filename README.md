@@ -200,12 +200,14 @@ LOCATION
   's3://[S3BucketName]/AWSLogs/[AWS-ACCOUNT-ID]'
   
 ```
+```
+Note you need to replace [S3BucketName] and [AWS-ACCOUNT-ID] (eg. s3://rds2macie-results-853823832/AWSLogs/999999999999).
 
-_Note you need to replace [S3BucketName] and [AWS-ACCOUNT-ID] (eg. s3://rds2macie-results-853823832/AWSLogs/999999999999)._
+```
 
 7. Click on the **Run query** button.
 
-_Note Now you can start to run SQL query in your Macie Results_
+Note Now you can start to run SQL query in your Macie Results.
 
 As your environment grows this blog post on [Top 10 Performance Tuning Tips for
 Amazon Athena](https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena/) can help you apply partitioning of data and how to consolidate data
