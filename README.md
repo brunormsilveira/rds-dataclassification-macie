@@ -162,6 +162,14 @@ Now we are going to create a Data Classification job so we can evaluate the cont
 
 ## Amazon Athena
 
+1. Go to the [Athena console](https://console.aws.amazon.com/athena/home?region=us-east-1#query) and open the *Query editor".
+2. It will show a message **Before you run your first query, you need to set up a query result location in Amazon S3. Learn more**. Click in the message link.
+3. In the **Settings** windows, put the address from the S3 bucket that you want to store the query results.
+4. Click in **Save**.
+5. Now, let's create the **macie_results** table to start to query our results. 
+6. Select the **macidedb** in the **Database** section.
+7. Paste the content bellow into **Query Editor**:
+
 ```
 CREATE EXTERNAL TABLE `macie_results`(
   `schemaversion` string COMMENT 'from deserializer', 
@@ -185,7 +193,13 @@ OUTPUTFORMAT
 LOCATION
   's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
 ```
+7. Click on the **Run query** button.
 
+_Note Now you can start to run SQL query in your Macie Results_
+
+As your environment grows this blog post on [Top 10 Performance Tuning Tips for
+Amazon Athena](https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena/) can help you apply partitioning of data and how to consolidate data
+into larger files if needed.
 
 ## Clean up
 1. Delete the solution stack in the following order: Disable Amazon Macie
