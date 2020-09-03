@@ -159,8 +159,14 @@ Now we are going to create a Data Classification job so we can evaluate the cont
 11. Verify all the details of the job you have created and click on **Submit** to continue.
 12. You will see a green banner telling you the ***The Job was successfully created***.
 
+Once that your job has complete, you can select the check box of the job and click on **Show results** and select **Show findings** that will open the findings of the job.
 
-## Amazon Athena
+![example](images/jobresults.png)
+
+_Note You can navigate in the findings and click in the each checkbox and see the details._
+
+
+## Creating External Table from Macie Job Results with Amazon Athena
 
 1. Go to the [Athena console](https://console.aws.amazon.com/athena/home?region=us-east-1#query) and open the *Query editor".
 2. It will show a message **Before you run your first query, you need to set up a query result location in Amazon S3. Learn more**. Click in the message link.
@@ -191,8 +197,12 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT 
   'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'
 LOCATION
-  's3://[S3Bucket-URL/AWSLogs/[AWS-ACCOUNT-ID]'
+  's3://[S3BucketName]/AWSLogs/[AWS-ACCOUNT-ID]'
+  
 ```
+
+_Note you need to replace [S3BucketName] and [AWS-ACCOUNT-ID] (eg. s3://rds2macie-results-853823832/AWSLogs/999999999999)._
+
 7. Click on the **Run query** button.
 
 _Note Now you can start to run SQL query in your Macie Results_
