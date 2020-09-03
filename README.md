@@ -200,10 +200,9 @@ LOCATION
   's3://[S3BucketName]/AWSLogs/[AWS-ACCOUNT-ID]'
   
 ```
-```
-Note you need to replace [S3BucketName] and [AWS-ACCOUNT-ID] (eg. s3://rds2macie-results-853823832/AWSLogs/999999999999).
 
-```
+_You need to replace [S3BucketName] and [AWS-ACCOUNT-ID] (eg. s3://rds2macie-results-853823832/AWSLogs/999999999999)._
+
 
 7. Click on the **Run query** button.
 
