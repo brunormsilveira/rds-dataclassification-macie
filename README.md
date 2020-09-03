@@ -171,7 +171,7 @@ CREATE EXTERNAL TABLE `macie_results`(
   `region` string COMMENT 'from deserializer', 
   `type` string COMMENT 'from deserializer', 
   `title` string COMMENT 'from deserializer', 
-  `severity` array<string> COMMENT 'from deserializer', 
+  `severity` struct<score:int,description:string> COMMENT 'from deserializer', 
   `createdat` string COMMENT 'from deserializer', 
   `resourcesaffected` array<string> COMMENT 'from deserializer', 
   `category` string COMMENT 'from deserializer', 
