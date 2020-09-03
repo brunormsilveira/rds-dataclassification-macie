@@ -14,8 +14,7 @@ As you see, the architecture from the solution that we will show you how to buil
 2.	DMS task that connect to Classic Models Demo database and transform the data into a several CSV files and load into S3 bucket.
 3.	Once the DMS task has being succeed, the Amazon Macie classification job will start to discover and classified the data and put the results into other S3 bucket. 
 4.	Once the classification job results are delivered, Amazon Athena will use Hive to create a table from the job classification results bucket.
-5.	Amazon Quicksight will be used to create a data source and start to create audit dashboards.
-
+5.	
 
 To get started you will need an IAM user with the following access:
 
@@ -34,7 +33,8 @@ _Note: Tested in the N. Virginia region (us-east-1)._
 2. Run the initial cloudformation template - 10 mins
 3. Configure Macie to export findings to an S3 Bucket - 5 mins
 4. Load the sample database into RDS - 1 min
-4. Create a classification job to scan all database exported- 10 mins
+4. Create a classification job to scan all database exported- 5 mins
+5. Create a External Database for Amazon Athena run SQL on Macie Results data - 5mins
 
 ## Enable Amazon Macie
 Your first step is to enable Amazon Macie.  Later we will create data classification jobs to investigate the contents of your S3 buckets and Macie will also do analysis on your S3 buckets and report on any configuration changes.
