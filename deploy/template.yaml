@@ -14,34 +14,18 @@ Parameters:
     Description: Public Subnet 0
     Type: String
     Default: 10.0.0.0/24
-  PublicSubnet0AZ:
-    Description: Public Subnet 0 - AZ
-    Type: String
-    Default: us-east-1a
   PublicSubnet1CIDR:
     Description: Public Subnet 0
     Type: String
     Default: 10.0.1.0/24
-  PublicSubnet1AZ:
-    Description: Public Subnet 1 - AZ
-    Type: String
-    Default: us-east-1b
   PrivateSubnet0CIDR:
     Description: Private Subnet 0
     Type: String
     Default: 10.0.2.0/24
-  PrivateSubnet0AZ:
-    Description: Private Subnet 0 - AZ
-    Type: String
-    Default: us-east-1a
   PrivateSubnet1CIDR:
     Description: Private Subnet 1
     Type: String
     Default: 10.0.3.0/24
-  PrivateSubnet1AZ:
-    Description: Private Subnet 1 - AZ
-    Type: String
-    Default: us-east-1b
   DBInstanceID:
     Default: mydbinstance
     Description: My database instance
@@ -97,7 +81,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Ref PublicSubnet0AZ
+      AvailabilityZone: us-east-1a
       CidrBlock: !Ref PublicSubnet0CIDR
       MapPublicIpOnLaunch: true
       Tags:
@@ -107,7 +91,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Ref PublicSubnet1AZ
+      AvailabilityZone: us-east-1b
       CidrBlock: !Ref PublicSubnet1CIDR
       MapPublicIpOnLaunch: true
       Tags:
@@ -117,7 +101,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Ref PrivateSubnet0AZ
+      AvailabilityZone: us-east-1a
       CidrBlock: !Ref PrivateSubnet0CIDR
       MapPublicIpOnLaunch: false
       Tags:
@@ -127,7 +111,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Ref PrivateSubnet1AZ
+      AvailabilityZone: us-east-1b
       CidrBlock: !Ref PrivateSubnet1CIDR
       MapPublicIpOnLaunch: false
       Tags:
