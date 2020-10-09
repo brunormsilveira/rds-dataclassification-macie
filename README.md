@@ -45,17 +45,17 @@ Your first step is to enable Amazon Macie.  Later we will create data classifica
  
 Macie is now enabled and has begun to collect information about the S3 buckets in the account.
 
-## CloudFormation
-1. Download the deploy/template.yaml file in your computer
-2. Open the [CloudFormation](https://console.aws.amazon.com/cloudformation/home?region=us-east-1) console (us-east-1).
-3. On the Welcome page, click on **Create stack** button.
-4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml**.
-5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo** and define your MySQL admin password on **DBPassword**.
-6. On the Step 3 - Configure stack options: Just click on **Next** button.
-7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button.
-8. Wait for the stack get into status **CREATE_COMPLETE**.
+<!--## CloudFormation-->
+<!--1. Download the deploy/template.yaml file in your computer-->
+<!--2. Open the [CloudFormation](https://console.aws.amazon.com/cloudformation/home?region=us-east-1) console (us-east-1).-->
+<!--3. On the Welcome page, click on **Create stack** button.-->
+<!--4. On the Step 1 - Specify template: Choose Upload a template file, click on **Choose file** button and select the **template.yaml**.-->
+<!--5. On the Step 2 - Specify stack details: Enter the Stack name as **RDS2MacieDemo** and define your MySQL admin password on **DBPassword**.-->
+<!--6. On the Step 3 - Configure stack options: Just click on **Next** button.-->
+<!--7. On the Step 4 - Review: Enable the checkbox **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**, and click on **Create Stack** button.-->
+<!--8. Wait for the stack get into status **CREATE_COMPLETE**.-->
 
-_Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value_
+<!--_Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointPort** value_-->
   
 
 ## Using Cloud9 environment
@@ -66,6 +66,8 @@ _Note: Under the Outputs tab, take a note of **EndpointAddress** and **EndpointP
 ```
 git clone https://github.com/brunormsilveira/rds-dataclassification-macie.git
 
+aws s3 mb s3://<SAM_BUCKET_NAME>
+sam deploy --capabilities CAPABILITY_NAMED_IAM --s3-bucket <SAM_BUCKET_NAME> --parameter-overrides DBPassword=<DB_PASSWORD>
 ```
 
 ## Deploying ClassicModels Database 

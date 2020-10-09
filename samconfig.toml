@@ -1,0 +1,9 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "rds-data-classification-pipeline"
+s3_prefix = "rds-data-classification-pipeline"
+region = "us-east-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+parameter_overrides = "Prefix=dcp VPCCIDR=10.0.0.0/16 PublicSubnet0CIDR=10.0.0.0/24 PublicSubnet1CIDR=10.0.1.0/24 PrivateSubnet0CIDR=10.0.2.0/24 PrivateSubnet1CIDR=10.0.3.0/24 DBInstanceID=mydbinstance DBInstanceClass=db.m5.large DBAllocatedStorage=20"
