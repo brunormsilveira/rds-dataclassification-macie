@@ -170,7 +170,9 @@ _Note: Now you can start to run SQL query in your Macie Results._
 ## Reference links
 
 https://docs.aws.amazon.com/macie/latest/userguide/macie-classify-objects-pii.html
+
 https://docs.aws.amazon.com/macie/latest/APIReference/jobs.html 
+
 https://docs.aws.amazon.com/macie/latest/user/custom-data-identifiers.html
 
 
