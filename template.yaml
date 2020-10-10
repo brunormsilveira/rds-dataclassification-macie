@@ -55,14 +55,30 @@ Parameters:
     MinValue: '5'
     MaxValue: '1024'
     ConstraintDescription: must be between 20 and 65536 GiB.
+  DBUser:
+    Description: MySQL User
+    Default: admin
+    Type: String
+    MinLength: '4'
+    MaxLength: '20'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
   DBPassword:
     NoEcho: 'true'
-    Description: Password MySQL database access
+    Description: MySQL Password
     Type: String
     MinLength: '8'
     MaxLength: '41'
     AllowedPattern: '[a-zA-Z0-9]*'
     ConstraintDescription: must contain only alphanumeric characters.
+  DBName:
+    Default: classicmodels
+    Description: DB Name
+    Type: String
+  DBScript:
+    Default: https://raw.githubusercontent.com/tgpadua/temp/main/classicmodels.sql
+    Description: DB Load Script
+    Type: String
     
 Resources:
 #   __     ______   ____ 
@@ -173,8 +189,14 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1
-  
+
   PrivateSubnet0RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet0
+  
+  PrivateSubnet1RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       RouteTableId: !Ref PrivateRouteTable
@@ -201,11 +223,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          CidrIp: !Ref PublicSubnet0CIDR
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          CidrIp: !Ref PublicSubnet1CIDR
+          CidrIp: !Ref VPCCIDR
 
 #    _  ____  __ ____  
 #   | |/ /  \/  / ___| 
@@ -367,12 +385,12 @@ Resources:
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBInstanceIdentifier: !Ref DBInstanceID
-      DBName: classicmodels
+      DBName: !Ref DBName
       DBInstanceClass: !Ref DBInstanceClass
       AllocatedStorage: !Ref DBAllocatedStorage
       Engine: MySQL
       EngineVersion: 8.0.16
-      MasterUsername: admin
+      MasterUsername: !Ref DBUser
       MasterUserPassword: !Ref DBPassword
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
@@ -386,6 +404,32 @@ Resources:
         - !Ref PrivateSubnet0
         - !Ref PrivateSubnet1        
 
+#    _____ ____ ____  
+#   | ____/ ___|___ \ 
+#   |  _|| |     __) |
+#   | |__| |___ / __/ 
+#   |_____\____|_____|
+#                     
+  RDSLoaderInstance: 
+    Type: AWS::EC2::Instance
+    DependsOn: MySQLDB
+    Properties: 
+      ImageId: ami-032930428bf1abbff
+      InstanceType: t2.micro
+      SubnetId: !Ref PublicSubnet0
+      SecurityGroupIds:
+        - !Ref RDSSG
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            sudo yum install -y mysql
+            curl ${DBScript} > /tmp/script.sql
+            mysql -u ${DBUser} -p${DBPassword} -h ${MySQLDB.Endpoint.Address} -P ${MySQLDB.Endpoint.Port} ${DBName} < /tmp/script.sql
+            sudo shutdown -h now
+      Tags:
+        - Key: Name
+          Value: !Sub '${Prefix}-RDS-Loader'
 
 #    ____  __  __ ____  
 #   |  _ \|  \/  / ___| 
@@ -418,13 +462,13 @@ Resources:
   DBEndpoint:
     Type: "AWS::DMS::Endpoint"
     Properties: 
-      DatabaseName: classicmodels
+      DatabaseName: !Ref DBName
       EndpointType: source
       EngineName: mysql
       Password: !Ref DBPassword
       Port: !GetAtt MySQLDB.Endpoint.Port
       ServerName: !GetAtt MySQLDB.Endpoint.Address
-      Username: admin
+      Username: !Ref DBUser
       
   S3Endpoint:
     Type: AWS::DMS::Endpoint
@@ -443,32 +487,34 @@ Resources:
       ReplicationInstanceArn: !Ref DMSReplicationInstance
       SourceEndpointArn: !Ref DBEndpoint
       TargetEndpointArn: !Ref S3Endpoint
-      ReplicationTaskSettings: '{
-        "TargetMetadata": {
-          "SupportLobs": true,
-        },
-        "FullLoadSettings": {
-          "TargetTablePrepMode": "DROP_AND_CREATE"
-        },
-        "Logging": {
-          "EnableLogging": true
-        },
-      }'
-      TableMappings: '{
-        "rules": [
-          {
-            "rule-type": "selection",
-            "rule-id": "1",
-            "rule-name": "1",
-            "object-locator": {
-              "schema-name": "classicmodels",
-              "table-name": "%"
-            },
-            "rule-action": "include",
-            "filters": []
+      ReplicationTaskSettings: |
+        {
+          "TargetMetadata": {
+            "SupportLobs": true
+          },
+          "FullLoadSettings": {
+            "TargetTablePrepMode": "DROP_AND_CREATE"
+          },
+          "Logging": {
+            "EnableLogging": true
           }
-          ]
-      }'
+        }
+      TableMappings: !Sub |
+        {
+          "rules": [
+            {
+              "rule-type": "selection",
+              "rule-id": "1",
+              "rule-name": "1",
+              "object-locator": {
+                "schema-name": "${DBName}",
+                "table-name": "%"
+              },
+              "rule-action": "include",
+              "filters": []
+            }
+            ]
+        }
 
 
 #    _                    _         _       
@@ -513,6 +559,7 @@ Resources:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !GetAtt CreateGlueScriptLambdaFunction.Arn
+
 
 #     ____ _            
 #    / ___| |_   _  ___ 
@@ -777,7 +824,8 @@ Resources:
                   - 's3:PutObject'
                 Resource:
                   - !Sub '${GlueAssetsBucket.Arn}/*'
-                  
+
+
 Outputs:
   EndpointAddress:
     Description: Address of the RDS endpoint.
