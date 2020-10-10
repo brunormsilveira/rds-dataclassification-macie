@@ -75,10 +75,10 @@ sam deploy --capabilities CAPABILITY_NAMED_IAM --s3-bucket <SAM_BUCKET_NAME> --p
 
 _Note: when the task status turn to **Load complete**, it's time to check your output S3 bucket._ 
 
-## Checking S3 output bucket
+## Checking S3 Macie_Landing bucket
 
 1. Open the [S3](https://console.aws.amazon.com/s3/home?region=us-east-1#).
-2. Click in the bucket that contains **-demobucket-** in the name (eg. rds2maciedemo-demobucket-{random number}).
+2. Click in the bucket that contains **Macie_Landing** in the name.
 3. Check if the bucket has this folder hierarchy:
 
 ```
@@ -104,9 +104,9 @@ _Note If is all ok, let's go to Amazon Macie._
 ![Repository for discovery results](./images/s3-results-repo-1.png)
 
 4. Select the **Existing Bucket** option 
-5. Using the dropdown called **Choose Bucket** select the bucket named **rds2maciedemo-resultsbucket-\<randomstring\>**.
+5. Using the dropdown called **Choose Bucket** select the bucket that has **macie_curated** in the name.
 6. Under the KMS encryption section select the option **Select a key from your account** 
-7. Using the KMS key alias dropdown select the KMS key called **rds2maciedemo-results-bucket-encryption-key**.
+7. Using the KMS key alias dropdown select the KMS key that das **macie_curated** in the name.
 8. Your setup should resemble to image below.
 
 ![Respository for discovery results setup](./images/s3-results-repo-2.png)
@@ -155,8 +155,9 @@ SELECT severity.description as severity, accountid, region, resourcesAffected FR
   
 ```
 
-
 6. Click on the **Run query** button.
+
+![SQL Query Results Example](./images/athena-sql-results.png)
 
 _Note Now you can start to run SQL query in your Macie Results.
 
