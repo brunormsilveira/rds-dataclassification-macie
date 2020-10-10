@@ -93,7 +93,7 @@ classicmodels:
   products
 
 ```
-_Note If is all ok, let's go to Amazon Macie._
+_Note: If is all ok, let's go to Amazon Macie._
 
 ## Configure Amazon Macie to export findings to an S3 Bucket
 
@@ -138,7 +138,7 @@ Once that your job has complete, you can select the check box of the job and cli
 
 ![example](images/jobresults.png)
 
-_Note You can navigate in the findings and click in the each checkbox and see the details._
+_Note: You can navigate in the findings and click in the each checkbox and see the details._
 
 
 ## Exploring Macie Results using SQL on Amazon Athena
@@ -159,7 +159,7 @@ SELECT severity.description as severity, accountid, region, resourcesAffected FR
 
 ![SQL Query Results Example](./images/athena-sql-results.png)
 
-_Note Now you can start to run SQL query in your Macie Results.
+_Note: Now you can start to run SQL query in your Macie Results._
 
 ## Clean up
 1. Delete the solution stack in the following order: **Disable Amazon Macie**.
