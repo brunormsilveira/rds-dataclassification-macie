@@ -8,13 +8,13 @@ and also will use AWS Glue and Amazon Athena to simplify the audit assessments o
 
 ![solution](images/rds2macie.png)
 
-As you see, the architecture from the solution that we will show you how to build is described as:
+The architecture workflow contains the following steps:
 
-1.	ClassicModels relational database on RDS for MySQL.
-2.	DMS task that connect to Classic Models database and transforms the data into several CSV files and load them into a S3 bucket.
-3.	Once the DMS task has succeed, a Macie classification job will start to discover the data and put the results into another S3 bucket.
-4.	Once the classification job results are delivered, an S3 SRR (Sample-region Replication) will replicate the job results objects to an staging bucket that will start an event that invokes a Lambda Function, this function will start an ETL job from Glue and transform the JSON file into Parquet and deliver into the data lake bucket.
-5.	Once the ETL job has succeed, it’s time to run SQL queries using Amazon Athena.
+1.	**ClassicModels** relational database on **RDS for MySQL**.
+2.	**DMS task** that connect to **Classic Models database** and transforms the data into several CSV files and load them into a **S3 bucket**.
+3.	Once the DMS task has succeed, a **Macie classification job** will start to discover the data and put the results into another S3 bucket.
+4.	Once the classification job results are delivered, an S3 SRR (Sample-region Replication) will replicate the job results objects to an staging bucket that will start an event that invokes a Lambda Function, this function will start an **ETL job** from Glue and transform the JSON file into **Parquet** and deliver into the data lake bucket.
+5.	Once the ETL job has succeed, it’s time to run **SQL queries** using Amazon Athena.
 
 To get started you will need an IAM user with the following access:
 
@@ -29,12 +29,6 @@ To get started you will need an IAM user with the following access:
 
 _Note: Tested in the N. Virginia region (us-east-1)._
 
-### Agenda
-1. Enable Amazon Macie - 2 mins
-2. Run the initial SAM template - 10 mins
-3. Configure Macie to export findings to an S3 Bucket - 2 mins
-4. Create a classification job to scan all database exported - 5 mins
-5. Exploring Macie Results using SQL on Amazon Athena - 5 mins
 
 ## Enable Amazon Macie
 Your first step is to enable Amazon Macie.  Later we will create data classification jobs to investigate the contents of your S3 buckets and Macie will also do analysis on your S3 buckets and report on any configuration changes.
@@ -100,19 +94,11 @@ _Note: If is all ok, let's go to Amazon Macie._
 1. Go to the [Amazon Macie](https://console.aws.amazon.com/macie/home?region=us-east-1) console (us-east-1).
 2. Click on [Settings](https://console.aws.amazon.com/macie/home?region=us-east-1#/settings) in the left hand menu.
 3. Click on the **Configure Now** option under the section ***Respository for discovery results***.
-
-![Repository for discovery results](./images/s3-results-repo-1.png)
-
 4. Select the **Existing Bucket** option 
 5. Using the dropdown called **Choose Bucket** select the bucket that has **macie_curated** in the name.
 6. Under the KMS encryption section select the option **Select a key from your account** 
 7. Using the KMS key alias dropdown select the KMS key that das **macie_curated** in the name.
-8. Your setup should resemble to image below.
-
-![Respository for discovery results setup](./images/s3-results-repo-2.png)
-
-9. Click Save to continue.  You should see a green banner indicating Success.  If you see a red banner with an error message, plese double check that you have selected the correct S3 bucket and KMS key.
-
+8. Click **Save** to continue.  You should see a green banner indicating **Success**.  If you see a red banner with an error message, plese double check that you have selected the correct S3 bucket and KMS key.
 
 ## Create the Data Classification Job
 
