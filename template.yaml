@@ -680,7 +680,7 @@ Resources:
             Type: string
           - Name: description
             Type: string
-          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
+          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/AWSLogs/'
           InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
           OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
           Compressed: true
