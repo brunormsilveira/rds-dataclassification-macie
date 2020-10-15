@@ -673,8 +673,8 @@ Resources:
           - Name: category
             Type: string
           - Name: classificationdetails
-            Type: "struct<\tjobArn:string,\tresult:struct<\t\tstatus:struct<code:string>,\t\tsizeClassified:string,\t\tmimeType:string,\t\tsensitiveData:array<struct<\t\t\tcategory:string,\t\t\ttotalCount:string,\t\t\tdetections:array<struct<\t\t\t\ttype:string,\t\t\t\tcount:string\t\t\t>>\t\t>\t>\t>,detailedResultsLocation:string,jobId:string>"
-          - Name: type
+            Type: "struct<jobArn:string,result:struct<status:struct<code:string>,sizeClassified:string,mimeType:string,sensitiveData:array<struct<category:string,totalCount:string,detections:array<struct<type:string,count:string,occurrences:struct<lineRanges:array<struct<start:string,end:string,startColumn:string>>>>>>>>,detailedResultsLocation:string,jobId:string>"
+	  - Name: type
             Type: string
           - Name: title
             Type: string
