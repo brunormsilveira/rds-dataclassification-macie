@@ -638,117 +638,145 @@ Resources:
         Name: dcp
         Description: 'Data Classification Pipeline'
     
-  GlueInputTable:
-    Type: AWS::Glue::Table
-    Properties: 
-      CatalogId: !Ref AWS::AccountId
-      DatabaseName: !Ref GlueDatabase
-      TableInput:
-        Name: dcp-glue-landing
-        Description: 'Data Classification Pipeline Input Table'
-        TableType: EXTERNAL_TABLE
-        Parameters: {
-            "classification": "json",
-            "compressionType": "gzip",
-            "typeOfData": "file"
-        }
-        StorageDescriptor:
-          Columns: 
-          - Name: schemaversion
-            Type: string
-          - Name: id
-            Type: string
-          - Name: accountid
-            Type: string
-          - Name: partition
-            Type: string
-          - Name: region
-            Type: string
-          - Name: severity
-            Type: "struct<score:string,description:string>"
-          - Name: createdat
-            Type: string
-          - Name: resourcesaffected
-            Type: "struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,eTag:string,serverSideEncryption:struct<encryptionType:string>,size:string,storageClass:string,tags:array<string>,publicAccess:boolean>>"
-          - Name: category
-            Type: string
-          - Name: classificationdetails
-            Type: "struct<jobArn:string,result:struct<status:struct<code:string>,sizeClassified:string,mimeType:string,sensitiveData:array<struct<category:string,totalCount:string,detections:array<struct<type:string,count:string,occurrences:struct<lineRanges:array<struct<start:string,end:string,startColumn:string>>>>>>>>,detailedResultsLocation:string,jobId:string>"
-	  - Name: type
-            Type: string
-          - Name: title
-            Type: string
-          - Name: description
-            Type: string
-          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/AWSLogs/'
-          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
-          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
-          Compressed: true
-          NumberOfBuckets: -1
-          SerdeInfo: 
-           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
-           Parameters: 
-            paths: "accountId,category,classificationDetails,createdAt,description,id,partition,region,resourcesAffected,schemaVersion,severity,title,type"
-          StoredAsSubDirectories: false
+#  GlueInputTable:
+#    Type: AWS::Glue::Table
+#    Properties: 
+#     CatalogId: !Ref AWS::AccountId
+#     DatabaseName: !Ref GlueDatabase
+#     TableInput:
+#        Name: dcp-glue-landing
+#        Description: 'Data Classification Pipeline Input Table'
+#        TableType: EXTERNAL_TABLE
+#        Parameters: {
+#            "classification": "json",
+#            "compressionType": "none",
+#            "typeOfData": "file"
+#        }
+#        StorageDescriptor:
+#          Columns: 
+#          - Name: version
+#            Type: string
+#          - Name: id
+#            Type: string
+#          - Name: detail-type
+#            Type: string
+#          - Name: source
+#            Type: string
+#          - Name: account
+#            Type: string
+#          - Name: time
+#            Type: string
+#          - Name: region
+#            Type: string
+#          - Name: resources
+#            Type: array<string>
+#          - Name: detail
+#            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
+#          - Name: partition_0
+#            Type: string
+#          - Name: partition_1
+#            Type: string
+#          - Name: partition_2
+#            Type: string
+#          - Name: partition_3
+#            Type: string
+#          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
+#          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+#          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+#          Compressed: true
+#          NumberOfBuckets: -1
+#          SerdeInfo: 
+#           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
+#           Parameters: 
+#            paths: "account,detail,detail-type,id,region,resources,source,time,version"
+#          StoredAsSubDirectories: false
             
-  GlueOutputTable:
-    Type: AWS::Glue::Table
-    Properties: 
-      CatalogId: !Ref AWS::AccountId
+#  GlueOutputTable:
+#    Type: AWS::Glue::Table
+#    Properties: 
+#      CatalogId: !Ref AWS::AccountId
+#      DatabaseName: !Ref GlueDatabase
+#      TableInput:
+#        Name: dcp-glue-curated
+#        Description: Data Classification Pipeline Input Table
+#        TableType: EXTERNAL_TABLE
+#        Parameters: {
+#            "classification": "parquet",
+#            "compressionType": "none",
+#            "typeOfData": "file"
+#        }
+#        StorageDescriptor:
+#          Columns: 
+#          - Name: version
+#            Type: string
+#          - Name: id
+#            Type: string
+#          - Name: detail-type
+#            Type: string
+#          - Name: source
+#            Type: string
+#          - Name: account
+#            Type: string
+#          - Name: time
+#            Type: string
+#          - Name: region
+#            Type: string
+#          - Name: resources
+#            Type: array<string>
+#         - Name: detail
+#            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
+#          - Name: partition_0
+#            Type: string
+#          - Name: partition_1
+#            Type: string
+#          - Name: partition_2
+#            Type: string
+#          - Name: partition_3
+#            Type: string
+#          Location: !Sub 's3://${Prefix}-glue-curated-${AWS::Region}-${AWS::AccountId}/'
+#          InputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+#          OutputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+#          Compressed: false
+#          NumberOfBuckets: -1
+#          SerdeInfo: 
+#           SerializationLibrary: "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+#           Parameters:
+#            serialization.format: "1"
+#          StoredAsSubDirectories: false
+
+  GlueInputTableCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Role: !GetAtt GlueJobRole.Arn
+      Description: Data Classification Pipeline Input Table Crawler
+      SchemaChangePolicy: ''
       DatabaseName: !Ref GlueDatabase
-      TableInput:
-        Name: dcp-glue-curated
-        Description: Data Classification Pipeline Input Table
-        TableType: EXTERNAL_TABLE
-        Parameters: {
-            "classification": "parquet",
-            "compressionType": "gzip",
-            "typeOfData": "file"
-        }
-        StorageDescriptor:
-          Columns: 
-          - Name: schemaversion
-            Type: string
-          - Name: id
-            Type: string
-          - Name: accountid
-            Type: string
-          - Name: partition
-            Type: string
-          - Name: region
-            Type: string
-          - Name: severity
-            Type: "struct<score:string,description:string>"
-          - Name: createdat
-            Type: string
-          - Name: resourcesaffected
-            Type: "struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,eTag:string,serverSideEncryption:struct<encryptionType:string>,size:string,storageClass:string,publicAccess:boolean>>"
-          - Name: category
-            Type: string
-          - Name: classificationdetails
-            Type: "struct<jobArn:string,result:struct<status:struct<code:string>,sizeClassified:string,mimeType:string,sensitiveData:array<struct<category:string,totalCount:string,detections:array<struct<type:string,count:string,occurrences:struct<lineRanges:array<struct<start:string,end:string,startColumn:string>>>>>>>>,detailedResultsLocation:string,jobId:string>"
-          - Name: type
-            Type: string
-          - Name: title
-            Type: string
-          - Name: description
-            Type: string
-          Location: !Sub 's3://${Prefix}-glue-curated-${AWS::Region}-${AWS::AccountId}/'
-          InputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
-          OutputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
-          Compressed: false
-          NumberOfBuckets: -1
-          SerdeInfo: 
-           SerializationLibrary: "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
-           Parameters: 
-            paths: "accountId,category,classificationDetails,createdAt,description,id,partition,region,resourcesAffected,schemaVersion,severity,title,type"
-          StoredAsSubDirectories: false
+      Targets:
+        S3Targets:
+          - Path: !Ref GlueLandingBucket
+      TablePrefix: dcp-glue-landing-
+      Name: dcp-glue-landing-crawler
+      Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
+
+  GlueOutputTableCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Role: !GetAtt GlueJobRole.Arn
+      Description: Data Classification Pipeline Output Table Crawler
+      SchemaChangePolicy: ''
+      DatabaseName: !Ref GlueDatabase
+      Targets:
+        S3Targets:
+          - Path: !Ref GlueCuratedBucket
+      TablePrefix: dcp-glue-curated-
+      Name: dcp-glue-curated-crawler
+      Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
 
   GlueJob:
     Type: AWS::Glue::Job
     Properties:
-      Name: 'data-classification-pipeline'
-      Description: 'Data Classification Pipeline'
+      Name: 'dcp-etl-job'
+      Description: 'Data Classification Pipeline ETL Job'
       Role: !GetAtt GlueJobRole.Arn
       Command:
         Name: glueetl
@@ -769,7 +797,48 @@ Resources:
       GlueVersion: '2.0'
     DependsOn: CreateGlueScriptCustomResource
 
-#    ___    _    __  __ 
+GlueWorkflow:
+  Type: AWS::Glue::Workflow
+  Properties: 
+    Description: 'Data Classification Pipeline Workflow'
+    Name: 'dcp-workflow'
+
+GlueWFStartTrigger:
+  Type: AWS::Glue::Trigger
+  Properties:
+    Description: 'Start Trigger'
+    Name: start-workflow
+    Type: ON_DEMAND
+    Actions: 
+      - CrawlerName: !Ref GlueInputTableCrawler
+    WorkflowName: !Ref GlueWorkflow
+
+GlueWFPostInputCrawlerTrigger:
+  Type: AWS::Glue::Trigger
+  Properties:
+    Name: 'Post Input Crawler Success Condition'
+    Type: "CONDITIONAL"
+    Actions: 
+      - CrawlerName: !Ref GlueJob
+    Predicate:
+      Conditions:
+       - LogicalOperator: EQUALS
+         CrawlerName: !Ref GlueInputTableCrawler
+         State: SUCCEEDED
+
+GlueWFPostETLJobTrigger:
+  Type: AWS::Glue::Trigger
+  Properties:
+    Name: 'Post ETL Job Success Condition'
+    Type: "CONDITIONAL"
+    Actions: 
+      - CrawlerName: !Ref GlueOutpuTableCrawler
+    Predicate:
+      Conditions:
+       - LogicalOperator: EQUALS
+         JobName: !Ref MyJob
+         State: SUCCEEDED
+_ 
 #   |_ _|  / \  |  \/  |
 #    | |  / _ \ | |\/| |
 #    | | / ___ \| |  | |
