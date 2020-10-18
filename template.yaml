@@ -79,7 +79,7 @@ Parameters:
     Default: https://raw.githubusercontent.com/tgpadua/temp/main/classicmodels.sql
     Description: DB Load Script
     Type: String
-    
+
 Resources:
 #   __     ______   ____ 
 #   \ \   / /  _ \ / ___|
@@ -378,6 +378,42 @@ Resources:
     Properties:
       BucketName: !Sub '${Prefix}-glue-assets-${AWS::Region}-${AWS::AccountId}'
 
+  MacieFindingsDeliveryStream:
+    DependsOn:
+      - DeliveryPolicy
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !Join 
+          - ''
+          - - 'arn:aws:s3:::'
+            - !Ref GlueLandingBucket
+        BufferingHints:
+          IntervalInSeconds: '60'
+          SizeInMBs: '5'
+        CompressionFormat: UNCOMPRESSED
+        Prefix: ''
+        RoleARN: !GetAtt DeliveryRole.Arn
+
+  MacieFindingsEventRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: 'All Findings from Amazon Macie'
+      EventPattern: 
+        source: 
+          - "aws.macie"
+        detail-type: 
+          - "Macie Finding"
+      State: "ENABLED"
+      Name: MacieFindinfs2Firehose
+      Targets:
+      - Arn: !GetAtt 
+          - MacieFindingsDeliveryStream
+          - Arn
+        Id: MacieFindingsEventRule
+        RoleArn: !GetAtt 
+          - EventDeliveryRole
+          - Arn
 
 #    ____  ____  ____  
 #   |  _ \|  _ \/ ___| 
@@ -698,6 +734,9 @@ Resources:
           - Path: !Ref GlueLandingBucket
       TablePrefix: dcp-glue-landing-
       Name: dcp-glue-landing-crawler
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
       Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
 
   GlueOutputTableCrawler:
@@ -712,6 +751,9 @@ Resources:
           - Path: !Ref GlueCuratedBucket
       TablePrefix: dcp-glue-curated-
       Name: dcp-glue-curated-crawler
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
       Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
 
   GlueJob:
@@ -739,48 +781,50 @@ Resources:
       GlueVersion: '2.0'
     DependsOn: CreateGlueScriptCustomResource
 
-GlueWorkflow:
-  Type: AWS::Glue::Workflow
-  Properties: 
-    Description: 'Data Classification Pipeline Workflow'
-    Name: 'dcp-workflow'
+  GlueWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties: 
+      Description: 'Data Classification Pipeline Workflow'
+      Name: 'dcp-workflow'
 
-GlueWFStartTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Description: 'Start Trigger'
-    Name: start-workflow
-    Type: ON_DEMAND
-    Actions: 
-      - CrawlerName: !Ref GlueInputTableCrawler
-    WorkflowName: !Ref GlueWorkflow
+  GlueWFStartTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Description: 'Start Trigger'
+      Name: start-workflow
+      Type: ON_DEMAND
+      Actions: 
+        - CrawlerName: !Ref GlueInputTableCrawler
+      WorkflowName: !Ref GlueWorkflow
 
-GlueWFPostInputCrawlerTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Name: 'Post Input Crawler Success Condition'
-    Type: "CONDITIONAL"
-    Actions: 
-      - CrawlerName: !Ref GlueJob
-    Predicate:
-      Conditions:
-       - LogicalOperator: EQUALS
-         CrawlerName: !Ref GlueInputTableCrawler
-         State: SUCCEEDED
+  GlueWFPostInputCrawlerTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: 'Post Input Crawler Success Condition'
+      Type: "CONDITIONAL"
+      Actions: 
+        - JobName: !Ref GlueJob
+      Predicate:
+        Conditions:
+         - LogicalOperator: EQUALS
+           CrawlerName: !Ref GlueInputTableCrawler
+           CrawlState: 'SUCCEEDED'
+      WorkflowName: !Ref GlueWorkflow
 
-GlueWFPostETLJobTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Name: 'Post ETL Job Success Condition'
-    Type: "CONDITIONAL"
-    Actions: 
-      - CrawlerName: !Ref GlueOutpuTableCrawler
-    Predicate:
-      Conditions:
-       - LogicalOperator: EQUALS
-         JobName: !Ref MyJob
-         State: SUCCEEDED
-_ 
+  GlueWFPostETLJobTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: 'Post ETL Job Success Condition'
+      Type: "CONDITIONAL"
+      Actions: 
+        - CrawlerName: !Ref GlueOutputTableCrawler
+      Predicate:
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref GlueJob
+            State: 'SUCCEEDED'
+      WorkflowName: !Ref GlueWorkflow
+
 #   |_ _|  / \  |  \/  |
 #    | |  / _ \ | |\/| |
 #    | | / ___ \| |  | |
@@ -818,51 +862,6 @@ _
                 Resource: 
                   - !GetAtt MacieLandingBucket.Arn
                   - !Sub "${MacieLandingBucket.Arn}/*"
-
-  S3ReplicationRole: 
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: 's3-replication-role'
-      AssumeRolePolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Effect: "Allow"
-            Principal: 
-              Service: 
-                - "s3.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        -
-          PolicyName: S3BucketReplication
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement: 
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:GetReplicationConfiguration
-                  - s3:ListBucket
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${Prefix}-macie-curated-${AWS::Region}-${AWS::AccountId}' # fix for circular dependency
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:GetObjectVersion
-                  - s3:GetObjectVersionAcl
-                  - s3:GetObjectVersionTagging
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${Prefix}-macie-curated-${AWS::Region}-${AWS::AccountId}/*' # fix for circular dependency
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:ReplicateObject
-                  - s3:ReplicateDelete
-                  - s3:ReplicateTags
-                Resource: 
-                  - !Sub '${GlueLandingBucket.Arn}/*'
 
   GlueJobRole:
     Type: AWS::IAM::Role
@@ -944,6 +943,85 @@ _
                 Resource:
                   - !Sub '${GlueAssetsBucket.Arn}/*'
 
+  DeliveryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+  DeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref GlueLandingBucket
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref GlueLandingBucket
+                  - '*'
+      Roles:
+        - !Ref DeliveryRole
+        
+  EventDeliveryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+  EventDeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: event_firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'kinesis:PutRecord'
+              - 'kinesis:PutRecords'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:kinesis:::deliverystream/'
+                  - !Ref MacieFindingsDeliveryStream
+              - !Join 
+                - ''
+                - - 'arn:aws:kinesis:::deliverystream/'
+                  - !Ref MacieFindingsDeliveryStream
+                  - '*'
+      Roles:
+        - !Ref EventDeliveryRole
 
 Outputs:
   EndpointAddress:
