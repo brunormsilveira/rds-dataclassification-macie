@@ -732,7 +732,10 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Ref GlueLandingBucket
-      TablePrefix: dcp-glue-landing-
+        #CatalogTargets:
+        #  DatabaseName: !Ref GlueDatabase
+        #  Tables: 
+        #    - !Ref GlueInputTable
       Name: dcp-glue-landing-crawler
       SchemaChangePolicy:
         UpdateBehavior: "UPDATE_IN_DATABASE"
@@ -809,6 +812,7 @@ Resources:
          - LogicalOperator: EQUALS
            CrawlerName: !Ref GlueInputTableCrawler
            CrawlState: 'SUCCEEDED'
+        Logical: 'ANY'
       WorkflowName: !Ref GlueWorkflow
 
   GlueWFPostETLJobTrigger:
@@ -823,6 +827,7 @@ Resources:
           - LogicalOperator: EQUALS
             JobName: !Ref GlueJob
             State: 'SUCCEEDED'
+        Logical: 'ANY'
       WorkflowName: !Ref GlueWorkflow
 
 #   |_ _|  / \  |  \/  |
