@@ -57,7 +57,8 @@ Macie is now enabled and has begun to collect information about the S3 buckets i
 git clone https://github.com/brunormsilveira/data-classification-pipeline.git
 
 aws s3 mb s3://<SAM_BUCKET_NAME>
-sam deploy --capabilities CAPABILITY_NAMED_IAM --s3-bucket <SAM_BUCKET_NAME> --parameter-overrides DBPassword=<DB_PASSWORD>
+cd data-classification-pipeline/
+sam deploy --stack-name DataClassPipelineStack --capabilities CAPABILITY_NAMED_IAM --s3-bucket <SAM_BUCKET_NAME> --parameter-overrides DBPassword=<DB_PASSWORD>
 ```
 
 ## Running DMS Task

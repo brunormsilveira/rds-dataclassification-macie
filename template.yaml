@@ -303,44 +303,6 @@ Resources:
       AliasName: !Sub 'alias/${AWS::StackName}-confidential-bucket-encryption-key'
       TargetKeyId:
         Ref: ConfidentialKey              
-
-  GlueLandingKey:
-    Type: 'AWS::KMS::Key'
-    Properties:
-      Description: Key for Glue Landing bucket
-      KeyPolicy:
-        Version: 2012-10-17
-        Id: key-default-1
-        Statement:
-          - Sid: Enable IAM User Permissions
-            Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
-          - Sid: Allow Glue Principal to use the key
-            Effect: Allow
-            Principal:
-              Service: glue.amazonaws.com
-            Action:
-              - 'kms:Decrypt'
-            Resource: '*'
-          - Sid: Allow S3 Principal to use the key
-            Effect: Allow
-            Principal:
-              Service: s3.amazonaws.com
-            Action:
-              - 'kms:GenerateDataKey'
-              - 'kms:Encrypt'
-              - 'kms:Decrypt'
-            Resource: '*'
-  
-  GlueLandingKeyAlias:
-    Type: 'AWS::KMS::Alias'
-    Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}-glue-landing-bucket-encryption-key'
-      TargetKeyId:
-        Ref: GlueLandingKey
             
 #    ____ _____ 
 #   / ___|___ / 
@@ -367,19 +329,6 @@ Resources:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: 'aws:kms'
               KMSMasterKeyID: !GetAtt MacieCuratedKey.Arn
-      VersioningConfiguration:
-        Status: Enabled
-      ReplicationConfiguration:
-        Role: !GetAtt S3ReplicationRole.Arn
-        Rules:
-          - Destination:
-              Bucket: !GetAtt GlueLandingBucket.Arn
-              EncryptionConfiguration: 
-                ReplicaKmsKeyID: !GetAtt GlueLandingKey.Arn
-            SourceSelectionCriteria:
-              SseKmsEncryptedObjects:
-                Status: Enabled
-            Status: Enabled
 
   MacieCuratedBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
@@ -412,17 +361,10 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub '${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}'
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: 'aws:kms'
-              KMSMasterKeyID: !GetAtt GlueLandingKey.Arn
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: 's3:ObjectCreated:*'
             Function: !GetAtt StartGlueJobLambdaFunction.Arn
-      VersioningConfiguration:
-        Status: Enabled
     DependsOn:
       - StartGlueJobLambdaFunctionPermission
 
@@ -638,58 +580,58 @@ Resources:
         Name: dcp
         Description: 'Data Classification Pipeline'
     
-#  GlueInputTable:
-#    Type: AWS::Glue::Table
-#    Properties: 
-#     CatalogId: !Ref AWS::AccountId
-#     DatabaseName: !Ref GlueDatabase
-#     TableInput:
-#        Name: dcp-glue-landing
-#        Description: 'Data Classification Pipeline Input Table'
-#        TableType: EXTERNAL_TABLE
-#        Parameters: {
-#            "classification": "json",
-#            "compressionType": "none",
-#            "typeOfData": "file"
-#        }
-#        StorageDescriptor:
-#          Columns: 
-#          - Name: version
-#            Type: string
-#          - Name: id
-#            Type: string
-#          - Name: detail-type
-#            Type: string
-#          - Name: source
-#            Type: string
-#          - Name: account
-#            Type: string
-#          - Name: time
-#            Type: string
-#          - Name: region
-#            Type: string
-#          - Name: resources
-#            Type: array<string>
-#          - Name: detail
-#            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
-#          - Name: partition_0
-#            Type: string
-#          - Name: partition_1
-#            Type: string
-#          - Name: partition_2
-#            Type: string
-#          - Name: partition_3
-#            Type: string
-#          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
-#          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
-#          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
-#          Compressed: true
-#          NumberOfBuckets: -1
-#          SerdeInfo: 
-#           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
-#           Parameters: 
-#            paths: "account,detail,detail-type,id,region,resources,source,time,version"
-#          StoredAsSubDirectories: false
+  GlueInputTable:
+    Type: AWS::Glue::Table
+    Properties: 
+     CatalogId: !Ref AWS::AccountId
+     DatabaseName: !Ref GlueDatabase
+     TableInput:
+        Name: dcp-glue-landing
+        Description: 'Data Classification Pipeline Input Table'
+        TableType: EXTERNAL_TABLE
+        Parameters: {
+            "classification": "json",
+            "compressionType": "none",
+            "typeOfData": "file"
+        }
+        StorageDescriptor:
+          Columns: 
+          - Name: version
+            Type: string
+          - Name: id
+            Type: string
+          - Name: detail-type
+            Type: string
+          - Name: source
+            Type: string
+          - Name: account
+            Type: string
+          - Name: time
+            Type: string
+          - Name: region
+            Type: string
+          - Name: resources
+            Type: array<string>
+          - Name: detail
+            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
+          - Name: partition_0
+            Type: string
+          - Name: partition_1
+            Type: string
+          - Name: partition_2
+            Type: string
+          - Name: partition_3
+            Type: string
+          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
+          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+          Compressed: true
+          NumberOfBuckets: -1
+          SerdeInfo: 
+           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
+           Parameters: 
+            paths: "account,detail,detail-type,id,region,resources,source,time,version"
+          StoredAsSubDirectories: false
             
 #  GlueOutputTable:
 #    Type: AWS::Glue::Table
