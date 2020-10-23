@@ -390,7 +390,11 @@ Resources:
             - !Ref GlueLandingBucket
         BufferingHints:
           IntervalInSeconds: '60'
+<<<<<<< HEAD
           SizeInMBs: '1'
+=======
+          SizeInMBs: '5'
+>>>>>>> 73409f65c04615e19d54b5949962c1149b39f85c
         CompressionFormat: UNCOMPRESSED
         Prefix: ''
         RoleARN: !GetAtt DeliveryRole.Arn
@@ -938,7 +942,11 @@ Resources:
                 - ''
                 - - 'arn:aws:s3:::'
                   - !Ref GlueLandingBucket
+<<<<<<< HEAD
                   - '/*'
+=======
+                  - '*'
+>>>>>>> 73409f65c04615e19d54b5949962c1149b39f85c
       Roles:
         - !Ref DeliveryRole
         
@@ -965,6 +973,7 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+<<<<<<< HEAD
               - 'firehose:PutRecord'
               - 'firehose:PutRecordBatch'
             Resource:
@@ -972,6 +981,20 @@ Resources:
                 - ''
                 - - 'arn:aws:firehose:::deliverystream/'
                   - !Ref MacieFindingsDeliveryStream
+=======
+              - 'kinesis:PutRecord'
+              - 'kinesis:PutRecords'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:kinesis:::deliverystream/'
+                  - !Ref MacieFindingsDeliveryStream
+              - !Join 
+                - ''
+                - - 'arn:aws:kinesis:::deliverystream/'
+                  - !Ref MacieFindingsDeliveryStream
+                  - '*'
+>>>>>>> 73409f65c04615e19d54b5949962c1149b39f85c
       Roles:
         - !Ref EventDeliveryRole
 

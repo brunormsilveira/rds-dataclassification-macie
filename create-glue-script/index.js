@@ -19,8 +19,13 @@ exports.handler = async(event, context) => {
 
         let data = await fs.readFile(SCRIPT_FILENAME);
         let script = data.toString().replace(/GLUE_CURATED_BUCKET/g, `${GLUE_CURATED_BUCKET}`);
+<<<<<<< HEAD
         let body = script.toString().replace(/ACCOUNT_ID/g, `${ACCOUNT_ID}`);
         let params = { Key: SCRIPT_KEY, Bucket: GLUE_ASSETS_BUCKET, Body: body };
+=======
+        let table = data.toString().replace(/ACCOUNT_ID/g, `${ACCOUNT_ID}`);
+        let params = { Key: SCRIPT_KEY, Bucket: GLUE_ASSETS_BUCKET, Body: script };
+>>>>>>> 73409f65c04615e19d54b5949962c1149b39f85c
 
         if (event.RequestType == 'Create' || event.RequestType == 'Update') {
             console.log('Creating Glue script.');
