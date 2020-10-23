@@ -79,7 +79,7 @@ Parameters:
     Default: https://raw.githubusercontent.com/tgpadua/temp/main/classicmodels.sql
     Description: DB Load Script
     Type: String
-    
+
 Resources:
 #   __     ______   ____ 
 #   \ \   / /  _ \ / ___|
@@ -378,6 +378,42 @@ Resources:
     Properties:
       BucketName: !Sub '${Prefix}-glue-assets-${AWS::Region}-${AWS::AccountId}'
 
+  MacieFindingsDeliveryStream:
+    DependsOn:
+      - DeliveryPolicy
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !Join 
+          - ''
+          - - 'arn:aws:s3:::'
+            - !Ref GlueLandingBucket
+        BufferingHints:
+          IntervalInSeconds: '60'
+          SizeInMBs: '1'
+        CompressionFormat: UNCOMPRESSED
+        Prefix: ''
+        RoleARN: !GetAtt DeliveryRole.Arn
+
+  MacieFindingsEventRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: 'All Findings from Amazon Macie'
+      EventPattern: 
+        source: 
+          - "aws.macie"
+        detail-type: 
+          - "Macie Finding"
+      State: "ENABLED"
+      Name: MacieFindinfs2Firehose
+      Targets:
+      - Arn: !GetAtt 
+          - MacieFindingsDeliveryStream
+          - Arn
+        Id: MacieFindingsEventRule
+        RoleArn: !GetAtt 
+          - EventDeliveryRole
+          - Arn
 
 #    ____  ____  ____  
 #   |  _ \|  _ \/ ___| 
@@ -531,13 +567,14 @@ Resources:
   StartGlueJobLambdaFunction:
     Type: AWS::Serverless::Function
     Properties: 
-      FunctionName: !Sub '${Prefix}-start-glue-job'
+      FunctionName: !Sub '${Prefix}-start-glue-workflow'
       CodeUri: start-glue-job/
-      Description: Data Classification Pipeline - Start Glue Job
+      Description: Data Classification Pipeline - Start Glue Workflow
       Role: !GetAtt StartGlueJobLambdaRole.Arn
       Environment:
         Variables:
-          JOB_NAME: 'data-classification-pipeline' # Note: Always refer to GlueJob.Name, it's hard coded to avoid circular dependency
+          #JOB_NAME: 'data-classification-pipeline' # Note: Always refer to GlueJob.Name, it's hard coded to avoid circular dependency
+          WORKFLOW_NAME: !Ref GlueWorkflow
           
   StartGlueJobLambdaFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -559,6 +596,8 @@ Resources:
         Variables:
           GLUE_ASSETS_BUCKET: !Ref GlueAssetsBucket
           GLUE_CURATED_BUCKET: !Ref GlueCuratedBucket
+          GLUE_LANDING_BUCKET: !Ref GlueLandingBucket
+          ACCOUNT_ID: !Ref AWS::AccountId
 
   CreateGlueScriptCustomResource:
     Type: Custom::CustomResource
@@ -580,70 +619,17 @@ Resources:
         Name: dcp
         Description: 'Data Classification Pipeline'
     
-  GlueInputTable:
-    Type: AWS::Glue::Table
-    Properties: 
-     CatalogId: !Ref AWS::AccountId
-     DatabaseName: !Ref GlueDatabase
-     TableInput:
-        Name: dcp-glue-landing
-        Description: 'Data Classification Pipeline Input Table'
-        TableType: EXTERNAL_TABLE
-        Parameters: {
-            "classification": "json",
-            "compressionType": "none",
-            "typeOfData": "file"
-        }
-        StorageDescriptor:
-          Columns: 
-          - Name: version
-            Type: string
-          - Name: id
-            Type: string
-          - Name: detail-type
-            Type: string
-          - Name: source
-            Type: string
-          - Name: account
-            Type: string
-          - Name: time
-            Type: string
-          - Name: region
-            Type: string
-          - Name: resources
-            Type: array<string>
-          - Name: detail
-            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
-          - Name: partition_0
-            Type: string
-          - Name: partition_1
-            Type: string
-          - Name: partition_2
-            Type: string
-          - Name: partition_3
-            Type: string
-          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
-          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
-          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
-          Compressed: true
-          NumberOfBuckets: -1
-          SerdeInfo: 
-           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
-           Parameters: 
-            paths: "account,detail,detail-type,id,region,resources,source,time,version"
-          StoredAsSubDirectories: false
-            
-#  GlueOutputTable:
+#  GlueInputTable:
 #    Type: AWS::Glue::Table
 #    Properties: 
-#      CatalogId: !Ref AWS::AccountId
-#      DatabaseName: !Ref GlueDatabase
-#      TableInput:
-#        Name: dcp-glue-curated
-#        Description: Data Classification Pipeline Input Table
+#     CatalogId: !Ref AWS::AccountId
+#     DatabaseName: !Ref GlueDatabase
+#     TableInput:
+#        Name: dcp-glue-landing
+#        Description: 'Data Classification Pipeline Input Table'
 #        TableType: EXTERNAL_TABLE
 #        Parameters: {
-#            "classification": "parquet",
+#            "classification": "json",
 #            "compressionType": "none",
 #            "typeOfData": "file"
 #        }
@@ -665,7 +651,7 @@ Resources:
 #            Type: string
 #          - Name: resources
 #            Type: array<string>
-#         - Name: detail
+#          - Name: detail
 #            Type: struct<schemaVersion:string,id:string,accountId:string,partition:string,region:string,type:string,title:string,description:string,severity:struct<score:int,description:string>,createdAt:string,updatedAt:string,count:int,resourcesAffected:struct<s3Bucket:struct<arn:string,name:string,createdAt:string,owner:struct<displayName:string,id:string>,tags:array<struct<key:string,value:string>>,defaultServerSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,publicAccess:struct<permissionConfiguration:struct<bucketLevelPermissions:struct<accessControlList:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,bucketPolicy:struct<allowsPublicReadAccess:boolean,allowsPublicWriteAccess:boolean>,blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>,accountLevelPermissions:struct<blockPublicAccess:struct<ignorePublicAcls:boolean,restrictPublicBuckets:boolean,blockPublicAcls:boolean,blockPublicPolicy:boolean>>>,effectivePermission:string>>,s3Object:struct<bucketArn:string,key:string,path:string,extension:string,lastModified:string,versionId:string,serverSideEncryption:struct<encryptionType:string,kmsMasterKeyId:string>,size:int,storageClass:string,tags:array<string>,publicAccess:boolean,etag:string>>,category:string,classificationDetails:struct<jobArn:string,jobId:string,result:struct<status:struct<code:string,reason:string>,sizeClassified:int,mimeType:string,havingMoreDetections:boolean,sensitiveData:array<struct<category:string,totalCount:int,detections:array<struct<type:string,count:int,occurrences:struct<lineRanges:array<struct<start:int,end:int,startColumn:int>>,offsetRanges:string,pages:string,records:string,cells:array<struct<row:int,column:int,columnName:string>>>>>>>,customDataIdentifiers:struct<totalCount:int,detections:array<string>>>,detailedResultsLocation:string>,policyDetails:string,sample:boolean,archived:boolean>
 #          - Name: partition_0
 #            Type: string
@@ -675,17 +661,17 @@ Resources:
 #            Type: string
 #          - Name: partition_3
 #            Type: string
-#          Location: !Sub 's3://${Prefix}-glue-curated-${AWS::Region}-${AWS::AccountId}/'
-#          InputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
-#          OutputFormat: "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
-#          Compressed: false
+#          Location: !Sub 's3://${Prefix}-glue-landing-${AWS::Region}-${AWS::AccountId}/'
+#          InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+#          OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+#          Compressed: true
 #          NumberOfBuckets: -1
 #          SerdeInfo: 
-#           SerializationLibrary: "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
-#           Parameters:
-#            serialization.format: "1"
+#           SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
+#           Parameters: 
+#            paths: "account,detail,detail-type,id,region,resources,source,time,version"
 #          StoredAsSubDirectories: false
-
+            
   GlueInputTableCrawler:
     Type: AWS::Glue::Crawler
     Properties:
@@ -696,8 +682,10 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Ref GlueLandingBucket
-      TablePrefix: dcp-glue-landing-
       Name: dcp-glue-landing-crawler
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
       Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
 
   GlueOutputTableCrawler:
@@ -710,8 +698,11 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Ref GlueCuratedBucket
-      TablePrefix: dcp-glue-curated-
+      TablePrefix: ''
       Name: dcp-glue-curated-crawler
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "LOG"
       Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"},\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"},\"Tables\":{\"AddOrUpdateBehavior\":\"MergeNewColumns\"}}}"
 
   GlueJob:
@@ -739,48 +730,58 @@ Resources:
       GlueVersion: '2.0'
     DependsOn: CreateGlueScriptCustomResource
 
-GlueWorkflow:
-  Type: AWS::Glue::Workflow
-  Properties: 
-    Description: 'Data Classification Pipeline Workflow'
-    Name: 'dcp-workflow'
+  GlueWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties: 
+      Description: 'Data Classification Pipeline Workflow'
+      Name: 'dcp-workflow'
 
-GlueWFStartTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Description: 'Start Trigger'
-    Name: start-workflow
-    Type: ON_DEMAND
-    Actions: 
-      - CrawlerName: !Ref GlueInputTableCrawler
-    WorkflowName: !Ref GlueWorkflow
+  GlueWFStartTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Description: 'Start Trigger'
+      Name: start-workflow
+      Type: ON_DEMAND
+      Actions: 
+        - CrawlerName: !Ref GlueInputTableCrawler
+      WorkflowName: !Ref GlueWorkflow
+    DependsOn: GlueInputTableCrawler
+      
+  GlueWFPostInputCrawlerTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: 'Post Input Crawler Success Condition'
+      Type: "CONDITIONAL"
+      StartOnCreation: true
+      Actions: 
+        - JobName: !Ref GlueJob
+      Predicate:
+        Conditions:
+         - LogicalOperator: EQUALS
+           CrawlerName: !Ref GlueInputTableCrawler
+           CrawlState: SUCCEEDED
+        Logical: ANY
+      WorkflowName: !Ref GlueWorkflow
+    DependsOn: GlueJob
 
-GlueWFPostInputCrawlerTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Name: 'Post Input Crawler Success Condition'
-    Type: "CONDITIONAL"
-    Actions: 
-      - CrawlerName: !Ref GlueJob
-    Predicate:
-      Conditions:
-       - LogicalOperator: EQUALS
-         CrawlerName: !Ref GlueInputTableCrawler
-         State: SUCCEEDED
+  GlueWFPostETLJobTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: 'Post ETL Job Success Condition'
+      Type: "CONDITIONAL"
+      StartOnCreation: true
+      Actions: 
+        - CrawlerName: !Ref GlueOutputTableCrawler
+      Predicate:
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref GlueJob
+            State: 'SUCCEEDED'
+        Logical: 'ANY'
+      WorkflowName: !Ref GlueWorkflow
+    DependsOn: GlueOutputTableCrawler
 
-GlueWFPostETLJobTrigger:
-  Type: AWS::Glue::Trigger
-  Properties:
-    Name: 'Post ETL Job Success Condition'
-    Type: "CONDITIONAL"
-    Actions: 
-      - CrawlerName: !Ref GlueOutpuTableCrawler
-    Predicate:
-      Conditions:
-       - LogicalOperator: EQUALS
-         JobName: !Ref MyJob
-         State: SUCCEEDED
-_ 
+
 #   |_ _|  / \  |  \/  |
 #    | |  / _ \ | |\/| |
 #    | | / ___ \| |  | |
@@ -818,51 +819,6 @@ _
                 Resource: 
                   - !GetAtt MacieLandingBucket.Arn
                   - !Sub "${MacieLandingBucket.Arn}/*"
-
-  S3ReplicationRole: 
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: 's3-replication-role'
-      AssumeRolePolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Effect: "Allow"
-            Principal: 
-              Service: 
-                - "s3.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        -
-          PolicyName: S3BucketReplication
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement: 
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:GetReplicationConfiguration
-                  - s3:ListBucket
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${Prefix}-macie-curated-${AWS::Region}-${AWS::AccountId}' # fix for circular dependency
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:GetObjectVersion
-                  - s3:GetObjectVersionAcl
-                  - s3:GetObjectVersionTagging
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${Prefix}-macie-curated-${AWS::Region}-${AWS::AccountId}/*' # fix for circular dependency
-              - 
-                Effect: Allow
-                Action: 
-                  - s3:ReplicateObject
-                  - s3:ReplicateDelete
-                  - s3:ReplicateTags
-                Resource: 
-                  - !Sub '${GlueLandingBucket.Arn}/*'
 
   GlueJobRole:
     Type: AWS::IAM::Role
@@ -916,7 +872,7 @@ _
             Statement:
               - Effect: Allow
                 Action: 
-                  - 'glue:StartJobRun'
+                  - 'glue:StartWorkflowRun'
                 Resource:
                   - '*'
                   
@@ -944,6 +900,80 @@ _
                 Resource:
                   - !Sub '${GlueAssetsBucket.Arn}/*'
 
+  DeliveryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+  DeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref GlueLandingBucket
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref GlueLandingBucket
+                  - '/*'
+      Roles:
+        - !Ref DeliveryRole
+        
+  EventDeliveryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+  EventDeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: event_firehose_delivery_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'firehose:PutRecord'
+              - 'firehose:PutRecordBatch'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:firehose:::deliverystream/'
+                  - !Ref MacieFindingsDeliveryStream
+      Roles:
+        - !Ref EventDeliveryRole
 
 Outputs:
   EndpointAddress:

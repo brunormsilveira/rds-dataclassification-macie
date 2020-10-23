@@ -7,6 +7,7 @@ const s3 = new AWS.S3();
 const FUNCTION_TIMEOUT = 10 * 1000;
 const GLUE_CURATED_BUCKET = process.env.GLUE_CURATED_BUCKET;
 const GLUE_ASSETS_BUCKET = process.env.GLUE_ASSETS_BUCKET;
+const ACCOUNT_ID = process.env.ACCOUNT_ID;
 
 const SCRIPT_FILENAME = 'dcp-script.txt';
 const SCRIPT_KEY = `scripts/${SCRIPT_FILENAME}`;
@@ -18,7 +19,8 @@ exports.handler = async(event, context) => {
 
         let data = await fs.readFile(SCRIPT_FILENAME);
         let script = data.toString().replace(/GLUE_CURATED_BUCKET/g, `${GLUE_CURATED_BUCKET}`);
-        let params = { Key: SCRIPT_KEY, Bucket: GLUE_ASSETS_BUCKET, Body: script };
+        let body = script.toString().replace(/ACCOUNT_ID/g, `${ACCOUNT_ID}`);
+        let params = { Key: SCRIPT_KEY, Bucket: GLUE_ASSETS_BUCKET, Body: body };
 
         if (event.RequestType == 'Create' || event.RequestType == 'Update') {
             console.log('Creating Glue script.');
